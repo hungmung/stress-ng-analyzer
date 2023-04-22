@@ -18,7 +18,14 @@ class Metrics:
         self.metrics = {}
 
     def fillMetrics(self, metrics):
-        pass
+        for metric in metrics:
+            for k,v in metric.items():
+                if k == 'stressor' and k not in self.metrics.keys():
+                    self.metrics[v] = {}
+                else:
+                    pass
+        print (self.metrics)
+                
 
 def readSystemInfo(nodeInfo) :
     for key in nodeInfo:
