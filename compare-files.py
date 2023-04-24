@@ -1,36 +1,30 @@
 import os
 import yaml
-basenames = ['cpu', 'cpu-cache', 'memory', 'network', 'scheduler', 'vm']
-
-
-
-sysInfo = {
-        'release': [],
-        'version': [],
-        'machine': [],
-        'pagesize': [],
-        'cpus': [],
-        'cpus-online': []
-        }
 
 class Metrics:
-    def __init__(self):
+    def __init__(self, host):
         self.metrics = {}
+        self.host = host
 
     def fillMetrics(self, metrics):
+        my_stressor = ""
         for metric in metrics:
             for k,v in metric.items():
-                if k == 'stressor' and k not in self.metrics.keys():
-                    self.metrics[v] = {}
+                if k == 'stressor':
+                    my_stressor = v
+                if my_stressor not in self.metrics.keys():
+                    self.metrics[my_stressor] = {}
                 else:
-                    pass
-        print (self.metrics)
-                
+                    if k in self.metrics[my_stressor].keys():
+                        self.metrics[my_stressor][k].append(v)
+                    else:
+                        self.metrics[my_stressor][k] = [v]
 
 def readSystemInfo(nodeInfo) :
+    sysInfo = {}
     for key in nodeInfo:
-        if key in sysInfo.keys():
-            sysInfo[key].append(nodeInfo[key])
+         sysInfo[key] = nodeInfo[key]
+    return sysInfo
 
 def validateSysInfo():
     from colorama import Fore as FORE
@@ -43,20 +37,26 @@ def validateSysInfo():
     print (STYLE.RESET_ALL)
 
 
-for test in basenames:
+if __name__=='__main__':
+    host_metrics = {}
     for file in os.listdir():
-        if file.endswith(test+".yaml"):
+        if file.endswith(".yaml"):
             fd = open(file, 'r')
             data = yaml.safe_load(fd)
             for key in data.keys():
                 if key == 'system-info':
-                    readSystemInfo (data[key])
+                    sys_info = readSystemInfo (data[key])
+                    if sys_info['hostname'] not in host_metrics.keys():
+                        my_metrics = Metrics(sys_info['hostname'])
+                        host_metrics[sys_info['hostname']] = my_metrics
+                    else:
+                        my_metrics = host_metrics['hostname']
                 elif key=='times':
                     pass
                 elif key=='thermal-zones':
                     pass
                 else:
-                    cpu = Metrics().fillMetrics(data[key])
+                    my_metrics.fillMetrics(data[key])
             break
-
-validateSysInfo()
+    for k,v in host_metrics.items():
+        print (host_metrics[k].metrics)
