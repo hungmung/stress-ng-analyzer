@@ -6,6 +6,13 @@ class Metrics:
         self.metrics = {}
         self.host = host
 
+    def __str__(self):
+        import pprint
+        my_str = ""
+        my_str += self.host
+        my_str += pprint.pformat(self.metrics)
+        return my_str
+
     def fillMetrics(self, metrics):
         my_stressor = ""
         for metric in metrics:
@@ -38,7 +45,7 @@ def validateSysInfo():
 
 
 if __name__=='__main__':
-    host_metrics = {}
+    host_metrics = []
     for file in os.listdir():
         if file.endswith(".yaml"):
             fd = open(file, 'r')
@@ -46,17 +53,28 @@ if __name__=='__main__':
             for key in data.keys():
                 if key == 'system-info':
                     sys_info = readSystemInfo (data[key])
-                    if sys_info['hostname'] not in host_metrics.keys():
-                        my_metrics = Metrics(sys_info['hostname'])
-                        host_metrics[sys_info['hostname']] = my_metrics
-                    else:
-                        my_metrics = host_metrics['hostname']
+                    my_host = sys_info['hostname']
+                    my_metrics = None
+                    for m in host_metrics:
+                        if m.host == my_host:
+                            my_metrics = m
+                            break
+                    if not my_metrics:
+                        my_metrics = Metrics(my_host)
+                        host_metrics.append(my_metrics)
+                        print (host_metrics)
                 elif key=='times':
                     pass
                 elif key=='thermal-zones':
                     pass
                 else:
                     my_metrics.fillMetrics(data[key])
-            break
-    for k,v in host_metrics.items():
-        print (host_metrics[k].metrics)
+        break
+    print (host_metrics)
+
+        
+#        if max(v) - min(v) <= 0.1*max(v):
+#            print (FORE.GREEN + k + ": OK")
+#        else:
+#            print (FORE.RED + k + ": NOK - " + sorted(v))
+#        print (STYLE.RESET_ALL)
