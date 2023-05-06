@@ -44,33 +44,52 @@ def validateSysInfo():
     print (STYLE.RESET_ALL)
 
 
-if __name__=='__main__':
-    host_metrics = []
-    for file in os.listdir():
-        if file.endswith(".yaml"):
-            fd = open(file, 'r')
-            data = yaml.safe_load(fd)
-            for key in data.keys():
-                if key == 'system-info':
-                    sys_info = readSystemInfo (data[key])
-                    my_host = sys_info['hostname']
-                    my_metrics = None
-                    for m in host_metrics:
-                        if m.host == my_host:
-                            my_metrics = m
-                            break
-                    if not my_metrics:
-                        my_metrics = Metrics(my_host)
-                        host_metrics.append(my_metrics)
-                        print (host_metrics)
-                elif key=='times':
-                    pass
-                elif key=='thermal-zones':
-                    pass
+def gather_by_metric(metrics):
+    all_metrics = {}
+    for metric in metrics:
+        for test in metric.metrics.keys():
+            for measure in metric.metrics[test].keys():
+                this_key =  (test, measure)
+                this_value = metric.metrics[test][measure]
+                if this_key in all_metrics.keys():
+                    all_metrics[this_key].extend(this_value)
                 else:
-                    my_metrics.fillMetrics(data[key])
-        break
-    print (host_metrics)
+                    all_metrics[this_key] =[]
+                    all_metrics[this_key].extend(this_value)
+    print (all_metrics)
+
+host_metrics = []
+for file in os.listdir():
+    if file.endswith(".yaml"):
+        fd = open(file, 'r')
+        data = yaml.safe_load(fd)
+        for key in data.keys():
+            if key == 'system-info':
+                sys_info = readSystemInfo (data[key])
+                my_host = sys_info['hostname']
+                my_metrics = None
+                for m in host_metrics:
+                    if m.host == my_host:
+                        my_metrics = m
+                        break
+                if not my_metrics:
+                    my_metrics = Metrics(my_host)
+                    host_metrics.append(my_metrics)
+            elif key=='times':
+                pass
+            elif key=='thermal-zones':
+                pass
+            else:
+                my_metrics.fillMetrics(data[key])
+# So now we have a set of metrics, one per host.  We now need to validate
+# consistency between hosts. So we have to rearrange into a dict where
+# the key is the tuple (stressor, measureand) and the value if a list of
+# values from every machine
+# We can do this either within the Metrics class possibly, but for now, lets 
+# just do it as a function at the top level:
+
+metrics = gather_by_metric(host_metrics)
+
 
         
 #        if max(v) - min(v) <= 0.1*max(v):
