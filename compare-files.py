@@ -44,7 +44,7 @@ def validateSysInfo():
     print (STYLE.RESET_ALL)
 
 
-def gather_by_metric(metrics):
+def gather_by_metric(metrics) -> dict:
     all_metrics = {}
     for metric in metrics:
         for test in metric.metrics.keys():
@@ -56,7 +56,24 @@ def gather_by_metric(metrics):
                 else:
                     all_metrics[this_key] =[]
                     all_metrics[this_key].extend(this_value)
-    print (all_metrics)
+    return all_metrics
+
+def validate_metrics(mertics:dict):
+    from colorama import Fore as FORE
+    from colorama import Style as STYLE
+    ok  = FORE.GREEN + "[{}:{}]: OK"
+    nok = FORE.RED + "[{}:{}]: NOK {}"
+    for key in metrics.keys():
+        upper = max(metrics[key])
+        lower = min(metrics[key])
+        try:
+            if (upper - lower)/upper < 0.1:
+                print (ok.format(key[0], key[1]))
+            else:
+                print (nok.format(key[0], key[1], str(metrics[key])))
+        except:
+            print (STYLE.RESET_ALL + "Do data for {},{}: ()".format(key[0], key[1], str(metrics[key])))
+    print (STYLE.RESET_ALL)
 
 host_metrics = []
 for file in os.listdir():
@@ -89,6 +106,7 @@ for file in os.listdir():
 # just do it as a function at the top level:
 
 metrics = gather_by_metric(host_metrics)
+validate_metrics(metrics)
 
 
         
